@@ -2,8 +2,11 @@ package com.example.springbd3big.student.service.command;
 
 import com.example.springbd3big.student.dtos.StudentCreateRequest;
 import com.example.springbd3big.student.dtos.StudentResponse;
+import com.example.springbd3big.student.dtos.StudentUpdateRequest;
 
 public interface StudentCommandService {
 
     StudentResponse createStudent(StudentCreateRequest req);
+    StudentResponse updateStudent(Long studentId, StudentUpdateRequest req);
+    void deleteStudent(Long studentId);
 }
