@@ -4,16 +4,16 @@ import com.example.springbd3big.course.model.Course;
 import com.example.springbd3big.student.model.Student;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+import java.util.Objects;
+
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Getter
+@Setter
 @Table(name = "enrolment")
 public class Enrolment {
 
@@ -38,4 +38,20 @@ public class Enrolment {
     )
     private Course course;
 
+    @Override
+    public String toString(){
+        return "Id: " + id + " Student: " + student + " Course: " + course;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Enrolment enrolment = (Enrolment) o;
+        return Objects.equals(id, enrolment.id) && Objects.equals(student, enrolment.student) && Objects.equals(course, enrolment.course);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, student, course);
+    }
 }

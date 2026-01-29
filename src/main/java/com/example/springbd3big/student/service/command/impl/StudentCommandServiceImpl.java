@@ -1,6 +1,5 @@
 package com.example.springbd3big.student.service.command.impl;
 
-import com.example.springbd3big.enrolment.model.Enrolment;
 import com.example.springbd3big.student.dtos.StudentCreateRequest;
 import com.example.springbd3big.student.dtos.StudentResponse;
 import com.example.springbd3big.student.dtos.StudentUpdateRequest;
@@ -11,8 +10,6 @@ import com.example.springbd3big.student.repository.StudentRepository;
 import com.example.springbd3big.student.service.command.StudentCommandService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Random;
 
 @Component
 public class StudentCommandServiceImpl implements StudentCommandService {
@@ -47,12 +44,13 @@ public class StudentCommandServiceImpl implements StudentCommandService {
 
     @Override
     @Transactional
-    public void deleteStudent(Long studentId) {
+    public StudentResponse deleteStudent(Long studentId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(()-> new StudentNotFoundException(studentId));
 
         studentRepository.delete(student);
 
+        return studentMapper.toDto(student);
     }
 
 

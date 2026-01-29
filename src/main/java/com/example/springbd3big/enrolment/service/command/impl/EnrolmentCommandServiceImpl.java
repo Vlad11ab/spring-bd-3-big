@@ -43,22 +43,15 @@ public class EnrolmentCommandServiceImpl implements EnrolmentCommandService {
     @Override
     @Transactional
     public EnrolmentResponse enrollStudent(EnrolmentCreateRequest req) {
-
         Course course = courseRepository.findById(req.courseId())
                 .orElseThrow(()-> new CourseNotFoundException(req.courseId()));
-
         Student student  = studentRepository.findById(req.studentId())
                 .orElseThrow(()-> new StudentNotFoundException(req.studentId()));
-
-
         Enrolment enrolment = Enrolment.builder()
                 .student(student)
                 .course(course)
                 .build();
         enrolmentRepository.save(enrolment);
-
-
-
         return enrolmentMapper.toDto(enrolment);
     }
 }

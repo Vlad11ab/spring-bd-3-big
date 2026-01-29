@@ -8,5 +8,5 @@ public interface StudentCommandService {
 
     StudentResponse createStudent(StudentCreateRequest req);
     StudentResponse updateStudent(Long studentId, StudentUpdateRequest req);
-    void deleteStudent(Long studentId);
+    StudentResponse deleteStudent(Long studentId);
 }
