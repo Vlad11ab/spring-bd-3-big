@@ -8,17 +8,24 @@ import com.example.springbd3big.student.dtos.StudentResponse;
 import com.example.springbd3big.student.dtos.StudentUpdateRequest;
 import com.example.springbd3big.student.repository.StudentRepository;
 import com.example.springbd3big.student.service.command.StudentCommandService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.PageRequest;
 
-@Component
+import java.util.Optional;
+
 @Configuration
 public class ConfigApp {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigApp.class);
 
-    private EnrolmentCommandService enrolmentCommandService;
-    private StudentCommandService studentCommandService;
-    private StudentRepository studentRepository;
-    private CourseRepository courseRepository;
+    private final EnrolmentCommandService enrolmentCommandService;
+    private final StudentCommandService studentCommandService;
+    private final StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
 
     public ConfigApp(
             StudentRepository studentRepository,
@@ -30,16 +37,31 @@ public class ConfigApp {
         this.courseRepository = courseRepository;
         this.enrolmentCommandService = enrolmentCommandService;
         this.studentCommandService = studentCommandService;
+    }
 
+    @Bean
+    @Profile("dev")
+    ApplicationRunner configAppRunner() {
+        return args -> {
+            runSafely("testFindAllStudents", this::testFindAllStudents);
+            runSafely("testFindStudentById", this::testFindStudentById);
+            runSafely("testFindAllCourses", this::testFindAllCourses);
+            runSafely("testStudentExistsByEmailJPQL", this::testStudentExistsByEmailJPQL);
+            runSafely("testEnrollStudent", this::testEnrollStudent);
+            runSafely("testCreateStudent", this::testCreateStudent);
+            runSafely("testUpdateStudent", this::testUpdateStudent);
+            runSafely("testRemoveStudent", this::testRemoveStudent);
+        };
+    }
 
-//        this.testFindAllStudents();
-//        this.testFindStudentById();
-        this.testFindAllCourses();
-//        this.testStudentExistsByEmailJPQL();
-//        this.testEnrollStudent();
-//        this.testCreateStudent();
-//        this.testUpdateStudent();
-//        this.testRemoveStudent();
+    private void runSafely(String name, Runnable action) {
+        try {
+            LOGGER.info("Running {}", name);
+            action.run();
+            LOGGER.info("Finished {}", name);
+        } catch (Exception ex) {
+            LOGGER.error("Failed {}", name, ex);
+        }
     }
 
     public void testFindAllStudents(){
@@ -47,7 +69,12 @@ public class ConfigApp {
     }
 
     public void testFindStudentById(){
-        System.out.println(studentRepository.findById(1L));
+        Optional<Long> studentId = findAnyStudentId();
+        if (studentId.isEmpty()) {
+            LOGGER.warn("No students found for testFindStudentById");
+            return;
+        }
+        System.out.println(studentRepository.findById(studentId.get()));
     }
 
     public void testFindAllCourses(){
@@ -62,9 +89,15 @@ public class ConfigApp {
     }
 
     public void testEnrollStudent(){
+        Optional<Long> studentId = findAnyStudentId();
+        Optional<Long> courseId = findAnyCourseId();
+        if (studentId.isEmpty() || courseId.isEmpty()) {
+            LOGGER.warn("Missing data for testEnrollStudent. studentId={}, courseId={}", studentId.orElse(null), courseId.orElse(null));
+            return;
+        }
         EnrolmentCreateRequest testReq = EnrolmentCreateRequest.builder()
-                .studentId(5L)
-                .courseId(5L)
+                .studentId(studentId.get())
+                .courseId(courseId.get())
                 .build();
         System.out.println("Enrolment salvat");
         enrolmentCommandService.enrollStudent(testReq);
@@ -82,20 +115,42 @@ public class ConfigApp {
     }
 
     public void testUpdateStudent(){
+        Optional<Long> studentId = findAnyStudentId();
+        if (studentId.isEmpty()) {
+            LOGGER.warn("No students found for testUpdateStudent");
+            return;
+        }
         StudentUpdateRequest updateReq = new StudentUpdateRequest(
                 "Vali",
                 "Marin",
                 "email");
 
-        StudentResponse updated = studentCommandService.updateStudent(52L, updateReq);
+        StudentResponse updated = studentCommandService.updateStudent(studentId.get(), updateReq);
         System.out.println("Studentul " + updated + " a fost updatat");
     }
 
     public void testRemoveStudent(){
-        studentCommandService.deleteStudent(102L);
-
+        Optional<Long> studentId = findAnyStudentId();
+        if (studentId.isEmpty()) {
+            LOGGER.warn("No students found for testRemoveStudent");
+            return;
+        }
+        studentCommandService.deleteStudent(studentId.get());
     }
 
+    private Optional<Long> findAnyStudentId() {
+        return studentRepository.findAll(PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .map(student -> (long) student.getId());
+    }
+
+    private Optional<Long> findAnyCourseId() {
+        return courseRepository.findAll(PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
+                .map(course -> (long) course.getId());
+    }
 
 
 

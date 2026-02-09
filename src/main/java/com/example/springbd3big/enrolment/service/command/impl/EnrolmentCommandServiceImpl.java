@@ -5,6 +5,8 @@ import com.example.springbd3big.course.model.Course;
 import com.example.springbd3big.course.repository.CourseRepository;
 import com.example.springbd3big.enrolment.dtos.EnrolmentCreateRequest;
 import com.example.springbd3big.enrolment.dtos.EnrolmentResponse;
+import com.example.springbd3big.enrolment.dtos.EnrolmentUpdateRequest;
+import com.example.springbd3big.enrolment.exceptions.EnrolmentNotFoundException;
 import com.example.springbd3big.enrolment.mappers.EnrolmentMapper;
 import com.example.springbd3big.enrolment.model.Enrolment;
 import com.example.springbd3big.enrolment.repository.EnrolmentRepository;
@@ -21,10 +23,10 @@ import java.util.Optional;
 @Component
 public class EnrolmentCommandServiceImpl implements EnrolmentCommandService {
 
-    private EnrolmentRepository enrolmentRepository;
-    private StudentRepository studentRepository;
-    private CourseRepository courseRepository;
-    private EnrolmentMapper enrolmentMapper;
+    private final EnrolmentRepository enrolmentRepository;
+    private final StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
+    private final EnrolmentMapper enrolmentMapper;
 
     public EnrolmentCommandServiceImpl(
             EnrolmentRepository enrolmentRepository,
@@ -52,6 +54,36 @@ public class EnrolmentCommandServiceImpl implements EnrolmentCommandService {
                 .course(course)
                 .build();
         enrolmentRepository.save(enrolment);
+        return enrolmentMapper.toDto(enrolment);
+    }
+
+    @Override
+    @Transactional
+    public EnrolmentResponse updateEnrolment(Long enrolmentId, EnrolmentUpdateRequest req) {
+        Enrolment enrolment = enrolmentRepository.findById(enrolmentId)
+                .orElseThrow(() -> new EnrolmentNotFoundException(enrolmentId));
+
+        if (req.studentId() != null) {
+            Student student = studentRepository.findById(req.studentId())
+                    .orElseThrow(() -> new StudentNotFoundException(req.studentId()));
+            enrolment.setStudent(student);
+        }
+        if (req.courseId() != null) {
+            Course course = courseRepository.findById(req.courseId())
+                    .orElseThrow(() -> new CourseNotFoundException(req.courseId()));
+            enrolment.setCourse(course);
+        }
+
+        return enrolmentMapper.toDto(enrolment);
+    }
+
+    @Override
+    @Transactional
+    public EnrolmentResponse deleteEnrolment(Long enrolmentId) {
+        Enrolment enrolment = enrolmentRepository.findById(enrolmentId)
+                .orElseThrow(() -> new EnrolmentNotFoundException(enrolmentId));
+
+        enrolmentRepository.delete(enrolment);
         return enrolmentMapper.toDto(enrolment);
     }
 }
